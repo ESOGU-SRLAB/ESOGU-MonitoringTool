@@ -1,0 +1,56 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro">
+
+  <xacro:macro name="ota_wheel" params="base_link xyz_hub rpy_hub side">
+
+    <!-- === WHEEL VISUAL === -->
+    <link name="wheel_${side}_link">
+
+      <visual>
+        <origin xyz="0 0 0" rpy="0 0 1.570796"/>
+        <geometry>
+          <mesh filename="file:////home/cem/colcon_ws/src/mobile_manipulator_description/meshes/ota/AnaTeker.stl"
+                scale="0.001 0.001 0.001"/>
+        </geometry>
+      </visual>
+
+      <!-- === WHEEL COLLISION (simple cylinder) === -->
+      <collision>
+        <origin xyz="0 0 0" rpy="0 1.570796 1.570796"/>
+        <geometry>
+          <cylinder radius="0.102" length="0.02"/>	  			  
+        </geometry>
+      </collision>
+
+      <!-- === WHEEL INERTIA === -->
+      <xacro:cylinder_inertial radius="0.102" length="0.02" mass="5"/>
+    </link>
+
+    <!-- === WHEEL JOINT === -->
+    <joint name="wheel_${side}_base" type="continuous">
+      <origin xyz="${xyz_hub}" rpy="${rpy_hub}"/>
+      <parent link="${base_link}"/>
+      <child link="wheel_${side}_link"/>
+      <axis xyz="0 1 0"/>
+    </joint>
+
+    <!-- Gazebo wheel parameters -->
+    <gazebo reference="wheel_${side}_link">
+      <mu1>1.0</mu1>
+      <mu2>1.0</mu2>
+      <kp>1000000.0</kp>
+      <kd>10.0</kd>
+      <minDepth>0.001</minDepth>
+      <material>Gazebo/Red</material>
+      <visual>
+        <material>
+          <ambient>1 0 0 1</ambient>
+          <diffuse>1 0 0 1</diffuse>
+          <specular>0.1 0.1 0.1 1</specular>
+        </material>
+      </visual>
+    </gazebo>
+
+  </xacro:macro>
+
+</robot>

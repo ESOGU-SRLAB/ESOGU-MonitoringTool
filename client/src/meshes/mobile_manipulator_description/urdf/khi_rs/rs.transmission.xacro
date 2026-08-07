@@ -1,0 +1,15 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro">
+
+  <!--
+    ROS1: Bu dosya ros_control transmission tanımlarını içeriyordu.
+
+    ROS2 Humble + Ignition:
+      - "transmission_interface/SimpleTransmission" artık kullanılmıyor.
+      - Joint command interface'leri ros2_control üzerinden tanımlanacak.
+      - Simülasyon tarafı gz_ros2_control plugin ile world/launch içinde kurulacak.
+
+    Bu nedenle bu xacro dosyası ROS2 versiyonunda intentionally no-op'tur.
+  -->
+
+</robot>

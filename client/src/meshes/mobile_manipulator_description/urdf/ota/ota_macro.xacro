@@ -1,0 +1,61 @@
+<?xml version="1.0"?>
+<robot name="ota_macros" xmlns:xacro="http://www.ros.org/wiki/xacro">
+  <xacro:include filename="$(find mobile_manipulator_description)/urdf/ota/ota_base.xacro"/>
+  <xacro:include filename="$(find mobile_manipulator_description)/urdf/ota/inertia_tensors.urdf.xacro"/>
+  <xacro:include filename="$(find mobile_manipulator_description)/urdf/ota/ota_wheel.xacro"/>
+  <xacro:include filename="$(find mobile_manipulator_description)/urdf/ota/ota_plugin.xacro"/>
+  <xacro:include filename="$(find mobile_manipulator_description)/urdf/ota/ota_caster.xacro"/>
+  <xacro:include filename="$(find mobile_manipulator_description)/urdf/ota/ota_ir.xacro"/>
+  <xacro:macro name="ota_macro" params="
+    base_link:=ota_base_link
+    name
+    use_fake_hardware:=false
+    sim_ignition:=false
+    generate_ros2_control_tag:=true
+    ">
+    <xacro:if value="${generate_ros2_control_tag}">
+      <!-- ros2 control include -->
+      <xacro:include filename="$(find mobile_manipulator_description)/urdf/ota/ota.ros2_control.xacro" />
+      <!-- ros2 control instance -->
+      <xacro:ota_ros2_control
+        name="${name}"
+        use_fake_hardware="${use_fake_hardware}"
+        sim_ignition="${sim_ignition}"
+      />
+    </xacro:if> 
+    <!-- AGV gövdesi -->
+    <xacro:ota_base link_name="${base_link}"/>
+
+    <!-- IR sensör -->
+    <xacro:ota_ir base_link="${base_link}" link_name="ota_ir" xyz_ir="0.403 0.0 0.03" rpy_ir="0 0 0"/>
+
+    <!-- Tahrik tekerlekleri -->
+    <xacro:ota_wheel base_link="${base_link}" xyz_hub="0 -0.30 -0.06" rpy_hub="0 0 0" side="left"/>
+    <xacro:ota_wheel base_link="${base_link}" xyz_hub="0 0.30 -0.06" rpy_hub="0 0 0" side="right"/>
+
+    <!-- Sarhoş tekerlekler -->
+    <xacro:ota_swivel base_link="${base_link}" xyz_caster="0.37 -0.22 -0.048" rpy_caster="0 0 0" side="front_right"/>
+    <xacro:ota_swivel base_link="${base_link}" xyz_caster="0.37 0.22 -0.048" rpy_caster="0 0 0" side="front_left"/>
+    <xacro:ota_swivel base_link="${base_link}" xyz_caster="-0.37 -0.22 -0.048" rpy_caster="0 0 0" side="back_right"/>
+    <xacro:ota_swivel base_link="${base_link}" xyz_caster="-0.37 0.22 -0.048" rpy_caster="0 0 0" side="back_left"/>
+
+    <!-- <xacro:ota_ir base_link="${base_link}" link_name="ota_ir" xyz_ir="0.503 0.0 0.175" rpy_ir="0 0 0"/>
+
+    
+    <xacro:ota_wheel base_link="${base_link}" xyz_hub="0 -0.305 0.10" rpy_hub="0 0 0" side="left"/>
+    <xacro:ota_wheel base_link="${base_link}" xyz_hub="0 0.295 0.10" rpy_hub="0 0 0" side="right"/>
+
+    
+    <xacro:ota_swivel base_link="${base_link}" xyz_caster="0.37 -0.223 0.12" rpy_caster="0 0 0" side="front_right"/>
+    <xacro:ota_swivel base_link="${base_link}" xyz_caster="0.37 0.217 0.12" rpy_caster="0 0 0" side="front_left"/>
+    <xacro:ota_swivel base_link="${base_link}" xyz_caster="-0.37 -0.223 0.12" rpy_caster="0 0 0" side="back_right"/>
+    <xacro:ota_swivel base_link="${base_link}" xyz_caster="-0.37 0.217 0.12" rpy_caster="0 0 0" side="back_left"/> -->
+
+    <!-- Differential Drive Plugin (AGV hareketi için) -->
+    <xacro:ota_diff_drive base_link="${base_link}"/>
+
+    <!-- Joint State Publisher Plugin -->
+    <xacro:ota_joints_state_publisher/>
+  </xacro:macro>
+
+</robot>

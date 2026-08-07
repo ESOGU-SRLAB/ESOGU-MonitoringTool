@@ -1,0 +1,50 @@
+<?xml version="1.0" ?>
+<robot name="robot" xmlns:xacro="http://ros.org/wiki/xacro">
+  <!-- RS005L makrosu -->
+  <xacro:include filename="$(find mobile_manipulator_description)/urdf/khi_rs/rs005l_macro.xacro"/>
+  <!-- AGV / OTA makroları -->  
+  <xacro:include filename="$(find mobile_manipulator_description)/urdf/ota/ota_macro.xacro"/>
+  <xacro:include filename="$(find mobile_manipulator_description)/urdf/ota/ota_plugin.xacro"/>
+  <!-- Simulation parameters -->
+  <xacro:arg name="use_fake_hardware" default="false" />
+  <xacro:arg name="tf_prefix" default="" />
+  <xacro:arg name="sim_ignition" default="false" />
+  <xacro:arg name="simulation_controllers" default="" />
+  <xacro:arg name="name" default="rs005l" />     
+  <xacro:arg name="use_fake_hardware" default="false" />
+  <xacro:arg name="sim_ignition" default="false" />
+  <xacro:arg name="simulation_controllers" default="" />
+  <xacro:property name="is_sim_ignition" value="$(arg sim_ignition)"/>
+  <!-- instantiate rs005l -->
+  <xacro:khi_rs005l 
+    name="$(arg name)"
+    tf_prefix="$(arg tf_prefix)"
+    parent="manipulator_base_link"
+    sim_ignition="$(arg sim_ignition)"
+    use_fake_hardware="$(arg use_fake_hardware)">
+    <origin xyz="0 0 0.051" rpy="0 0 3.141593" />
+  </xacro:khi_rs005l>
+
+  <xacro:ota_macro
+      base_link="ota_base_link"
+      name="ota_system"
+      sim_ignition="$(arg sim_ignition)"
+      use_fake_hardware="$(arg use_fake_hardware)"
+      generate_ros2_control_tag="true"/>
+  
+  <xacro:if value="$(arg sim_ignition)">
+    <!-- Kawasaki robot arm controller -->
+    <gazebo>
+      <plugin filename="gz_ros2_control-system" name="gz_ros2_control::GazeboSimROS2ControlPlugin">
+        <parameters>$(arg simulation_controllers)</parameters>
+        <controller_manager_node_name>$(arg tf_prefix)controller_manager</controller_manager_node_name>
+        <ros>
+          <namespace>kawasaki</namespace>
+        </ros>
+      </plugin>
+    </gazebo>
+    <xacro:ota_diff_drive base_link="ota_base_link"/>
+    <xacro:ota_joints_state_publisher /> 
+  </xacro:if>
+
+</robot>

@@ -1,0 +1,33 @@
+.navbar {
+  flex: 0 0 auto;
+  height: 56px;
+  padding: 0 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #ffffff;
+  border-bottom: 1px solid #e5e5e5;
+}
+
+.navbar-logo img {
+  display: block;
+  height: 26px;
+  width: auto;
+}
+
+.navbar-home {
+  color: #000000;
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+@media (max-width: 480px) {
+  .navbar {
+    padding: 0 14px;
+  }
+
+  .navbar-logo img {
+    height: 22px;
+  }
+}

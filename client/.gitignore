@@ -1,0 +1,11 @@
+node_modules
+build
+.env
+.env.local
+.env.development.local
+.env.production.local
+npm-debug.log*
+src/meshes/mobile_manipulator_description/log/
+src/meshes/mobile_manipulator_description/model.zip
+src/meshes/mobile_manipulator_description/meshes/camera.stl
+src/meshes/mobile_manipulator_description/meshes/ota/OTA-v0.7.zip

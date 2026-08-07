@@ -1,0 +1,631 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://wiki.ros.org/xacro">
+  <!--
+    Base UR robot series xacro macro.
+
+    NOTE this is NOT a URDF. It cannot directly be loaded by consumers
+    expecting a flattened '.urdf' file. See the top-level '.xacro' for that
+    (but note that .xacro must still be processed by the xacro command).
+
+    This file models the base kinematic chain of a UR robot, which then gets
+    parameterised by various configuration files to convert it into a UR3(e),
+    UR5(e), UR10(e) or UR16e.
+
+    NOTE the default kinematic parameters (i.e., link lengths, frame locations,
+    offsets, etc) do not correspond to any particular robot. They are defaults
+    only. There WILL be non-zero offsets between the Forward Kinematics results
+    in TF (i.e., robot_state_publisher) and the values reported by the Teach
+    Pendant.
+
+    For accurate (and robot-specific) transforms, the 'kinematics_parameters_file'
+    parameter MUST point to a .yaml file containing the appropriate values for
+    the targeted robot.
+
+    If using the UniversalRobots/Universal_Robots_ROS_Driver, follow the steps
+    described in the readme of that repository to extract the kinematic
+    calibration from the controller and generate the required .yaml file.
+
+    Main author of the migration to yaml configs Ludovic Delval.
+
+    Contributors to previous versions (in no particular order)
+
+     - Denis Stogl
+     - Lovro Ivanov
+     - Felix Messmer
+     - Kelsey Hawkins
+     - Wim Meeussen
+     - Shaun Edwards
+     - Nadia Hammoudeh Garcia
+     - Dave Hershberger
+     - G. vd. Hoorn
+     - Philip Long
+     - Dave Coleman
+     - Miguel Prada
+     - Mathias Luedtke
+     - Marcel Schnirring
+     - Felix von Drigalski
+     - Felix Exner
+     - Jimmy Da Silva
+     - Ajit Krisshna N L
+     - Muhammad Asif Rana
+  -->
+
+  <xacro:include filename="$(find ur_description)/urdf/inc/ur_transmissions.xacro" />
+  <xacro:include filename="$(find ur_description)/urdf/inc/ur_common.xacro" />
+  <xacro:property name="M_PI" value="3.1415926535897931" />
+  <xacro:macro name="ur_robot" params="
+    name
+    tf_prefix
+    parent
+    *origin
+    joint_limits_parameters_file
+    kinematics_parameters_file
+    physical_parameters_file
+    visual_parameters_file
+    generate_ros2_control_tag:=true
+    transmission_hw_interface:=hardware_interface/PositionJointInterface
+    safety_limits:=false
+    safety_pos_margin:=0.15
+    safety_k_position:=20
+    use_fake_hardware:=false
+    fake_sensor_commands:=false
+    sim_gazebo:=false
+    sim_ignition:=true
+    headless_mode:=false
+    initial_positions:=${dict(shoulder_pan_joint=0.0,shoulder_lift_joint=-1.57,elbow_joint=0.0,wrist_1_joint=-1.57,wrist_2_joint=0.0,wrist_3_joint=0.0)}
+    use_tool_communication:=false
+    tool_voltage:=0
+    tool_parity:=0
+    tool_baud_rate:=115200
+    tool_stop_bits:=1
+    tool_rx_idle_chars:=1.5
+    tool_tx_idle_chars:=3.5
+    tool_device_name:=/tmp/ttyUR
+    tool_tcp_port:=54321
+    robot_ip:=0.0.0.0
+    script_filename:=to_be_filled_by_ur_robot_driver
+    output_recipe_filename:=to_be_filled_by_ur_robot_driver
+    input_recipe_filename:=to_be_filled_by_ur_robot_driver
+    reverse_port:=50001
+    script_sender_port:=50002
+    reverse_ip:=0.0.0.0
+    script_command_port:=50004
+    trajectory_port:=50003
+    non_blocking_read:=true
+    keep_alive_count:=2"
+
+    >
+
+    <!-- Load configuration data from the provided .yaml files -->
+    <xacro:read_model_data
+      joint_limits_parameters_file="${joint_limits_parameters_file}"
+      kinematics_parameters_file="${kinematics_parameters_file}"
+      physical_parameters_file="${physical_parameters_file}"
+      visual_parameters_file="${visual_parameters_file}"
+      force_abs_paths="${sim_gazebo or sim_ignition}"/>
+
+
+    <xacro:if value="${generate_ros2_control_tag}">
+      <!-- ros2 control include -->
+      <xacro:include filename="$(find ur_description)/urdf/ur.ros2_control.xacro" />
+      <!-- ros2 control instance -->
+      <xacro:ur_ros2_control
+        name="${name}"
+        use_fake_hardware="${use_fake_hardware}"
+        initial_positions="${initial_positions}"
+        fake_sensor_commands="${fake_sensor_commands}"
+        headless_mode="${headless_mode}"
+        sim_gazebo="${sim_gazebo}"
+        sim_ignition="${sim_ignition}"
+        script_filename="${script_filename}"
+        output_recipe_filename="${output_recipe_filename}"
+        input_recipe_filename="${input_recipe_filename}"
+        tf_prefix="${tf_prefix}"
+        hash_kinematics="${kinematics_hash}"
+        robot_ip="${robot_ip}"
+        use_tool_communication="${use_tool_communication}"
+        tool_voltage="${tool_voltage}"
+        tool_parity="${tool_parity}"
+        tool_baud_rate="${tool_baud_rate}"
+        tool_stop_bits="${tool_stop_bits}"
+        tool_rx_idle_chars="${tool_rx_idle_chars}"
+        tool_tx_idle_chars="${tool_tx_idle_chars}"
+        tool_device_name="${tool_device_name}"
+        tool_tcp_port="${tool_tcp_port}"
+        reverse_port="${reverse_port}"
+        script_sender_port="${script_sender_port}"
+        reverse_ip="${reverse_ip}"
+        script_command_port="${script_command_port}"
+        trajectory_port="${trajectory_port}"
+        non_blocking_read="${non_blocking_read}"
+        keep_alive_count="${keep_alive_count}"
+        />
+    </xacro:if>
+
+    <!-- Add URDF transmission elements (for ros_control) -->
+    <!--<xacro:ur_arm_transmission prefix="${prefix}" hw_interface="${transmission_hw_interface}" />-->
+    <!-- Placeholder for ros2_control transmission which don't yet exist -->
+
+    <!-- links -  main serial chain -->
+    <link name="${tf_prefix}base_link"/>
+    <link name="${tf_prefix}base_link_inertia">
+      <visual>
+        <origin xyz="0.105561 -0.1918 -0.6445" rpy="0 0 0"/>
+        <geometry>
+          <mesh filename="file:////home/cem/colcon_ws/src/Universal_Robots_ROS2_Description/meshes/ur10e/visual/base.stl" scale="0.001 0.001 0.001"/>
+        </geometry>
+        <material name="silver"/>
+      </visual>
+      <collision>
+        <origin xyz="0.105561 -0.1918 -0.6445" rpy="0 0 0"/>
+        <geometry>
+          <mesh filename="file:////home/cem/colcon_ws/src/Universal_Robots_ROS2_Description/meshes/ur10e/collision/base.stl" scale="0.001 0.001 0.001"/>
+        </geometry>
+        <material name="silver"/>
+      </collision>
+      <xacro:cylinder_inertial radius="${base_inertia_radius}" length="${base_inertia_length}" mass="${base_mass}">
+        <origin xyz="0 0 0" rpy="0 0 0" />
+      </xacro:cylinder_inertial>
+    </link>
+
+    <link name="${tf_prefix}shoulder_link">
+      <visual>
+        <origin xyz="0.105565 -0.1918 -0.74405" rpy="0 0 0"/>
+        <geometry>
+          <mesh filename="file:////home/cem/colcon_ws/src/Universal_Robots_ROS2_Description/meshes/ur10e/visual/shoulder.stl" scale="0.001 0.001 0.001"/>
+        </geometry>
+        <material name="silver"/>
+      </visual>
+      <collision>
+        <origin xyz="0.105565 -0.1918 -0.74405" rpy="0 0 0"/>
+        <geometry>
+          <mesh filename="file:////home/cem/colcon_ws/src/Universal_Robots_ROS2_Description/meshes/ur10e/collision/shoulder.stl" scale="0.001 0.001 0.001"/>
+        </geometry>
+      </collision>
+      <inertial>
+        <mass value="${shoulder_mass}"/>
+        <origin rpy="${shoulder_inertia_rotation}" xyz="${shoulder_cog}"/>
+        <inertia
+            ixx="${shoulder_inertia_ixx}"
+            ixy="${shoulder_inertia_ixy}"
+            ixz="${shoulder_inertia_ixz}"
+            iyy="${shoulder_inertia_iyy}"
+            iyz="${shoulder_inertia_iyz}"
+            izz="${shoulder_inertia_izz}"
+        />
+      </inertial>   
+    </link>
+
+    <link name="${tf_prefix}upper_arm_link">
+      <visual>
+        <origin xyz="0.105565 -0.2778 -0.83405" rpy="0 0 0"/>
+        <geometry>
+          <mesh filename="file:////home/cem/colcon_ws/src/Universal_Robots_ROS2_Description/meshes/ur10e/visual/upperarm.stl" scale="0.001 0.001 0.001"/>
+        </geometry>
+        <material name="silver"/>
+      </visual>
+      <collision>
+        <origin xyz="0.105565 -0.2778 -0.83405" rpy="0 0 0"/>
+        <geometry>
+          <mesh filename="file:////home/cem/colcon_ws/src/Universal_Robots_ROS2_Description/meshes/ur10e/collision/upperarm.stl" scale="0.001 0.001 0.001"/>
+        </geometry>
+      </collision>
+      <inertial>
+        <mass value="${upper_arm_mass}"/>
+        <origin rpy="${upper_arm_inertia_rotation}" xyz="${upper_arm_cog}"/>
+        <inertia
+            ixx="${upper_arm_inertia_ixx}"
+            ixy="${upper_arm_inertia_ixy}"
+            ixz="${upper_arm_inertia_ixz}"
+            iyy="${upper_arm_inertia_iyy}"
+            iyz="${upper_arm_inertia_iyz}"
+            izz="${upper_arm_inertia_izz}"
+        />
+      </inertial>
+    </link>
+
+    <link name="${tf_prefix}forearm_link">
+      <visual>
+        <origin xyz="-0.506534 -0.299691 -0.833449" rpy="0 0 0"/>
+        <geometry>
+          <mesh filename="file:////home/cem/colcon_ws/src/Universal_Robots_ROS2_Description/meshes/ur10e/visual/forearm.stl" scale="0.001 0.001 0.001"/>
+        </geometry>
+        <material name="silver"/>
+      </visual>
+      <collision>
+        <origin xyz="-0.506534 -0.299691 -0.833449" rpy="0 0 0"/>
+        <geometry>
+          <mesh filename="file:////home/cem/colcon_ws/src/Universal_Robots_ROS2_Description/meshes/ur10e/collision/forearm.stl" scale="0.001 0.001 0.001"/>
+        </geometry>
+      </collision>
+      <inertial>
+        <mass value="${forearm_mass}"/>
+        <origin rpy="${forearm_inertia_rotation}" xyz="${forearm_cog}"/>
+        <inertia
+            ixx="${forearm_inertia_ixx}"
+            ixy="${forearm_inertia_ixy}"
+            ixz="${forearm_inertia_ixz}"
+            iyy="${forearm_inertia_iyy}"
+            iyz="${forearm_inertia_iyz}"
+            izz="${forearm_inertia_izz}"
+        />
+      </inertial>
+    </link>
+
+    <link name="${tf_prefix}wrist_1_link">
+      <visual>
+      	<origin xyz="-1.078132 -0.301691 -0.833449" rpy="0 0 0"/>
+        <geometry>
+          <mesh filename="file:////home/cem/colcon_ws/src/Universal_Robots_ROS2_Description/meshes/ur10e/visual/wrist1.stl" scale="0.001 0.001 0.001"/>
+        </geometry>
+        <material name="silver"/>
+      </visual>
+      <collision>
+        <origin xyz="-1.078132 -0.301691 -0.833449" rpy="0 0 0"/>
+        <geometry>
+          <mesh filename="file:////home/cem/colcon_ws/src/Universal_Robots_ROS2_Description/meshes/ur10e/collision/wrist1.stl" scale="0.001 0.001 0.001"/>
+        </geometry>
+      </collision>
+      <inertial>
+        <mass value="${wrist_1_mass}"/>
+        <origin rpy="${wrist_1_inertia_rotation}" xyz="${wrist_1_cog}"/>
+        <inertia
+            ixx="${wrist_1_inertia_ixx}"
+            ixy="${wrist_1_inertia_ixy}"
+            ixz="${wrist_1_inertia_ixz}"
+            iyy="${wrist_1_inertia_iyy}"
+            iyz="${wrist_1_inertia_iyz}"
+            izz="${wrist_1_inertia_izz}"
+        />
+      </inertial>
+    </link>
+
+    <link name="${tf_prefix}wrist_2_link">
+      <visual>
+        <origin xyz="-1.078132 -0.355691 -0.77175" rpy="0 0 0"/>
+        <geometry>
+          <mesh filename="file:////home/cem/colcon_ws/src/Universal_Robots_ROS2_Description/meshes/ur10e/visual/wrist2.stl" scale="0.001 0.001 0.001"/>
+        </geometry>
+        <material name="silver"/>
+      </visual>
+      <collision>
+        <origin xyz="-1.078132 -0.355691 -0.77175" rpy="0 0 0"/>
+        <geometry>
+          <mesh filename="file:////home/cem/colcon_ws/src/Universal_Robots_ROS2_Description/meshes/ur10e/collision/wrist2.stl" scale="0.001 0.001 0.001"/>
+        </geometry>
+      </collision>
+      <inertial>
+        <mass value="${wrist_2_mass}"/>
+        <origin rpy="${wrist_2_inertia_rotation}" xyz="${wrist_2_cog}"/>
+        <inertia
+            ixx="${wrist_2_inertia_ixx}"
+            ixy="${wrist_2_inertia_ixy}"
+            ixz="${wrist_2_inertia_ixz}"
+            iyy="${wrist_2_inertia_iyy}"
+            iyz="${wrist_2_inertia_iyz}"
+            izz="${wrist_2_inertia_izz}"
+        />
+      </inertial>
+    </link>
+
+    <link name="${tf_prefix}wrist_3_link">
+      <visual>
+        <origin xyz="-1.078132 -0.417389 -0.71775" rpy="0 0 0"/>
+        <geometry>
+          <mesh filename="file:////home/cem/colcon_ws/src/Universal_Robots_ROS2_Description/meshes/ur10e/visual/wrist3.stl" scale="0.001 0.001 0.001"/>
+        </geometry>
+        <material name="silver"/>
+      </visual>
+      <collision>
+        <origin xyz="-1.078132 -0.417389 -0.71775" rpy="0 0 0"/>
+        <geometry>
+          <mesh filename="file:////home/cem/colcon_ws/src/Universal_Robots_ROS2_Description/meshes/ur10e/collision/wrist3.stl" scale="0.001 0.001 0.001"/>
+        </geometry>
+      </collision>
+      <inertial>
+        <mass value="${wrist_3_mass}"/>
+        <origin rpy="${wrist_3_inertia_rotation}" xyz="${wrist_3_cog}"/>
+        <inertia
+            ixx="${wrist_3_inertia_ixx}"
+            ixy="${wrist_3_inertia_ixy}"
+            ixz="${wrist_3_inertia_ixz}"
+            iyy="${wrist_3_inertia_iyy}"
+            iyz="${wrist_3_inertia_iyz}"
+            izz="${wrist_3_inertia_izz}"
+        />
+      </inertial>
+    </link>
+
+    <!-- base_joint fixes base_link to the environment -->
+    <joint name="${tf_prefix}base_joint" type="fixed">
+      <xacro:insert_block name="origin" />
+      <parent link="${parent}" />
+      <child link="${tf_prefix}base_link" />
+    </joint>
+
+    <!-- joints - main serial chain -->
+    <joint name="${tf_prefix}base_link-base_link_inertia" type="fixed">
+      <parent link="${tf_prefix}base_link" />
+      <child link="${tf_prefix}base_link_inertia" />
+      <!-- 'base_link' is REP-103 aligned (so X+ forward), while the internal
+           frames of the robot/controller have X+ pointing backwards.
+           Use the joint between 'base_link' and 'base_link_inertia' (a dummy
+           link/frame) to introduce the necessary rotation over Z (of pi rad).
+      -->
+      <origin xyz="0.052439 0.0768 0.05815" rpy="0 0 0" />
+    </joint>
+
+    <joint name="${tf_prefix}shoulder_pan_joint" type="revolute">
+      <parent link="${tf_prefix}base_link_inertia" />
+      <child link="${tf_prefix}shoulder_link" />
+      <origin xyz="-4e-06 0.0 0.09955" rpy="0 0 0" />
+      <axis xyz="0.0 -0.0 1.0" />
+      <limit lower="${shoulder_pan_lower_limit}" upper="${shoulder_pan_upper_limit}"
+        effort="${shoulder_pan_effort_limit}" velocity="${shoulder_pan_velocity_limit}"/>
+      <xacro:if value="${safety_limits}">
+         <safety_controller soft_lower_limit="${shoulder_pan_lower_limit + safety_pos_margin}" soft_upper_limit="${shoulder_pan_upper_limit - safety_pos_margin}" k_position="${safety_k_position}" k_velocity="0.0"/>
+      </xacro:if>
+      <dynamics damping="0" friction="0"/>
+    </joint>
+
+    <joint name="${tf_prefix}shoulder_lift_joint" type="revolute">
+      <parent link="${tf_prefix}shoulder_link" />
+      <child link="${tf_prefix}upper_arm_link" />
+      <origin xyz="0.0 0.086 0.09" rpy="0 0 0" />
+      <axis xyz="0.0 1.0 0.0" />  
+      <limit lower="${shoulder_lift_lower_limit}" upper="${shoulder_lift_upper_limit}"
+        effort="${shoulder_lift_effort_limit}" velocity="${shoulder_lift_velocity_limit}"/>
+      <xacro:if value="${safety_limits}">
+         <safety_controller soft_lower_limit="${shoulder_lift_lower_limit + safety_pos_margin}" soft_upper_limit="${shoulder_lift_upper_limit - safety_pos_margin}" k_position="${safety_k_position}" k_velocity="0.0"/>
+      </xacro:if>
+      <dynamics damping="0" friction="0"/>
+    </joint>
+
+    <joint name="${tf_prefix}elbow_joint" type="revolute">
+      <parent link="${tf_prefix}upper_arm_link" />
+      <child link="${tf_prefix}forearm_link" />
+      <origin xyz="0.612099 0.021891 -0.000601" rpy="0 0 0" />
+      <axis xyz="0.0 1.0 -0.0" />
+      <limit lower="${elbow_joint_lower_limit}" upper="${elbow_joint_upper_limit}"
+        effort="${elbow_joint_effort_limit}" velocity="${elbow_joint_velocity_limit}"/>
+      <xacro:if value="${safety_limits}">
+         <safety_controller soft_lower_limit="${elbow_joint_lower_limit + safety_pos_margin}" soft_upper_limit="${elbow_joint_upper_limit - safety_pos_margin}" k_position="${safety_k_position}" k_velocity="0.0"/>
+      </xacro:if>
+      <dynamics damping="0" friction="0"/>
+    </joint>
+
+    <joint name="${tf_prefix}wrist_1_joint" type="revolute">
+      <parent link="${tf_prefix}forearm_link" />
+      <child link="${tf_prefix}wrist_1_link" />
+      <origin xyz="0.571598 0.002 0.0" rpy="0 0 0" />
+      <axis xyz="0.0 1.0 0.0" />
+      <limit lower="${wrist_1_lower_limit}" upper="${wrist_1_upper_limit}"
+        effort="${wrist_1_effort_limit}" velocity="${wrist_1_velocity_limit}"/>
+      <xacro:if value="${safety_limits}">
+         <safety_controller soft_lower_limit="${wrist_1_lower_limit + safety_pos_margin}" soft_upper_limit="${wrist_1_upper_limit - safety_pos_margin}" k_position="${safety_k_position}" k_velocity="0.0"/>
+      </xacro:if>
+      <dynamics damping="0" friction="0"/>
+    </joint>
+
+    <joint name="${tf_prefix}wrist_2_joint" type="revolute">
+      <parent link="${tf_prefix}wrist_1_link" />
+      <child link="${tf_prefix}wrist_2_link" />
+      <origin xyz="0.0 0.054 -0.061699" rpy="0 0 0" />
+      <axis xyz="0.0 0.0 -1.0" />
+      <limit lower="${wrist_2_lower_limit}" upper="${wrist_2_upper_limit}"
+             effort="${wrist_2_effort_limit}" velocity="${wrist_2_velocity_limit}"/>
+      <xacro:if value="${safety_limits}">
+         <safety_controller soft_lower_limit="${wrist_2_lower_limit + safety_pos_margin}" soft_upper_limit="${wrist_2_upper_limit - safety_pos_margin}" k_position="${safety_k_position}" k_velocity="0.0"/>
+      </xacro:if>
+      <dynamics damping="0" friction="0"/>
+    </joint>
+
+    <joint name="${tf_prefix}wrist_3_joint" type="${wrist_3_joint_type}">
+      <parent link="${tf_prefix}wrist_2_link" />
+      <child link="${tf_prefix}wrist_3_link" />
+      <origin xyz="0.0 0.061698 -0.054" rpy="0 0 0" />
+      <axis xyz="0.0 1.0 0.0" />
+      <xacro:if value="${wrist_3_joint_type != 'continuous'}">
+        <limit lower="${wrist_3_lower_limit}" upper="${wrist_3_upper_limit}"
+          effort="${wrist_3_effort_limit}" velocity="${wrist_3_velocity_limit}"/>
+        <xacro:if value="${safety_limits}">
+          <safety_controller soft_lower_limit="${wrist_3_lower_limit + safety_pos_margin}" soft_upper_limit="${wrist_3_upper_limit - safety_pos_margin}" k_position="${safety_k_position}" k_velocity="0.0"/>
+        </xacro:if>
+      </xacro:if>
+      <xacro:unless value="${wrist_3_joint_type != 'continuous'}">
+        <limit effort="${wrist_3_effort_limit}" velocity="${wrist_3_velocity_limit}"/>
+        <xacro:if value="${safety_limits}">
+          <safety_controller k_position="${safety_k_position}" k_velocity="0.0"/>
+        </xacro:if>
+      </xacro:unless>
+      <dynamics damping="0" friction="0"/>
+    </joint>
+
+    <link name="${tf_prefix}ft_frame"/>
+    <joint name="${tf_prefix}wrist_3_link-ft_frame" type="fixed">
+      <parent link="${tf_prefix}wrist_3_link"/>
+      <child link="${tf_prefix}ft_frame"/>
+      <origin xyz="0 0 0" rpy="${pi} 0 0"/>
+    </joint>
+
+    <!-- ROS-Industrial 'base' frame - base_link to UR 'Base' Coordinates transform -->
+    <link name="${tf_prefix}base"/>
+    <joint name="${tf_prefix}base_link-base_fixed_joint" type="fixed">
+      <!-- Note the rotation over Z of pi radians - as base_link is REP-103
+           aligned (i.e., has X+ forward, Y+ left and Z+ up), this is needed
+           to correctly align 'base' with the 'Base' coordinate system of
+           the UR controller.
+      -->
+      <origin xyz="0 0 0" rpy="0 0 ${pi}"/>
+      <parent link="${tf_prefix}base_link"/>
+      <child link="${tf_prefix}base"/>
+    </joint>
+
+    <!-- ROS-Industrial 'flange' frame - attachment point for EEF models -->
+    <link name="${tf_prefix}flange">
+      <inertial>
+        <origin xyz="-0.0608781963738787 0.032615699999237635 0.00948696917434988" rpy="0 0 0"/>
+        <mass value="0.22117646672683344"/>
+        <inertia ixx="0.000146" iyy="0.000196" izz="0.000224" ixy="3e-05" iyz="0.0" ixz="2e-06"/>
+      </inertial>
+      <visual>
+        <origin xyz="-1.106132 -0.502789 -0.727752" rpy="0 0 0"/>
+        <geometry>
+          <mesh filename="file:////home/cem/colcon_ws/src/Universal_Robots_ROS2_Description/meshes/ur10e/collision/flange.stl" scale="0.001 0.001 0.001"/>
+        </geometry>
+        <material name="silver"/>
+      </visual>
+      <collision>
+        <origin xyz="-1.106132 -0.502789 -0.727752" rpy="0 0 0"/>
+        <geometry>
+          <mesh filename="file:////home/cem/colcon_ws/src/Universal_Robots_ROS2_Description/meshes/ur10e/collision/flange.stl" scale="0.001 0.001 0.001"/>
+        </geometry>
+      </collision>
+    </link>
+
+    <joint name="${tf_prefix}wrist_3-tool0" type="fixed">
+      <parent link="${tf_prefix}wrist_3_link" />
+      <child link="${tf_prefix}tool0" />
+      <origin xyz="0.0 0.0605 2e-06" rpy="0 0 0" />
+    </joint>
+
+    <!-- ROS-Industrial 'tool0' frame - all-zeros tool frame -->
+    <link name="${tf_prefix}tool0">
+      <inertial>
+        <origin xyz="0.0005008754706203877 0.038081991894250655 0.00018003251162090894" rpy="0 0 0"/>
+        <mass value="1.7658241523371878"/>
+        <inertia ixx="0.001386" iyy="0.001768" izz="0.002292" ixy="3e-05" iyz="1e-05" ixz="6e-06"/>
+      </inertial>
+      <visual>
+        <origin xyz="-1.078132 -0.477889 -0.717752" rpy="0 0 0"/>
+        <geometry>
+          <mesh filename="file:////home/cem/colcon_ws/src/Universal_Robots_ROS2_Description/meshes/ur10e/collision/tool0.stl" scale="0.001 0.001 0.001"/>
+        </geometry>
+        <material name="silver"/>
+      </visual>
+      <collision>
+        <origin xyz="-1.078132 -0.477889 -0.717752" rpy="0 0 0"/>
+        <geometry>
+          <mesh filename="file:////home/cem/colcon_ws/src/Universal_Robots_ROS2_Description/meshes/ur10e/collision/tool0.stl" scale="0.001 0.001 0.001"/>
+        </geometry>
+      </collision>
+    </link>
+
+    <link name="${tf_prefix}sick_camera">
+      <inertial>
+        <origin xyz="-0.030360308070560116 0.017381415318390325 -0.0003625735829336785" rpy="0 0 0"/>
+        <mass value="2.884207514548234"/>
+        <inertia ixx="0.002502" iyy="0.002303" izz="0.002674" ixy="-0.000172" iyz="1.7e-05" ixz="-6e-06"/>
+      </inertial>
+      <visual>
+        <origin xyz="-1.02433 -0.5466 -0.730752" rpy="0 0 0"/>
+        <geometry>
+          <mesh filename="file:////home/cem/colcon_ws/src/Universal_Robots_ROS2_Description/meshes/ur10e/collision/sick_camera_mo.stl" scale="0.001 0.001 0.001"/>
+        </geometry>
+        <material name="silver"/>
+      </visual>
+      <collision>
+        <origin xyz="-1.02433 -0.5466 -0.730752" rpy="0 0 0"/>
+        <geometry>
+          <mesh filename="file:////home/cem/colcon_ws/src/Universal_Robots_ROS2_Description/meshes/ur10e/collision/sick_camera_mo.stl" scale="0.001 0.001 0.001"/>
+        </geometry>
+      </collision>
+    </link>
+
+    <link name="${tf_prefix}cable_channel_flange">
+      <inertial>
+        <origin xyz="4.611879362848015e-07 -0.034962924750167046 -0.015484781070814413" rpy="0 0 0"/>
+        <mass value="0.0634433620618905"/>
+        <inertia ixx="2.8e-05" iyy="2.6e-05" izz="2.3e-05" ixy="0.0" iyz="-1e-05" ixz="0.0"/>
+      </inertial>
+      <visual>
+        <origin xyz="-1.078132 -0.537789 -0.707752" rpy="0 0 0"/>
+        <geometry>
+          <mesh filename="file:////home/cem/colcon_ws/src/Universal_Robots_ROS2_Description/meshes/ur10e/collision/cable_channel_flange.stl" scale="0.001 0.001 0.001"/>
+        </geometry>
+        <material name="silver"/>
+      </visual>
+      <collision>
+        <origin xyz="-1.078132 -0.537789 -0.707752" rpy="0 0 0"/>
+        <geometry>
+          <mesh filename="file:////home/cem/colcon_ws/src/Universal_Robots_ROS2_Description/meshes/ur10e/collision/cable_channel_flange.stl" scale="0.001 0.001 0.001"/>
+        </geometry>
+      </collision>
+    </link>
+
+    <link name="${tf_prefix}cable_channel">
+      <inertial>
+        <origin xyz="-0.0007043985483754511 1.4782874641072752e-07 -0.030869319710005172" rpy="0 0 0"/>
+        <mass value="0.4154967185204701"/>
+        <inertia ixx="0.00017" iyy="0.000341" izz="0.000223" ixy="-0.0" iyz="-0.0" ixz="6e-06"/>
+      </inertial>
+      <visual>
+        <origin xyz="-1.078132 -0.486789 -0.669752" rpy="0 0 0"/>
+        <geometry>
+          <mesh filename="file:////home/cem/colcon_ws/src/Universal_Robots_ROS2_Description/meshes/ur10e/collision/cable_channel.stl" scale="0.001 0.001 0.001"/>
+        </geometry>
+        <material name="silver"/>
+      </visual>
+      <collision>
+        <origin xyz="-1.078132 -0.486789 -0.669752" rpy="0 0 0"/>
+        <geometry>
+          <mesh filename="file:////home/cem/colcon_ws/src/Universal_Robots_ROS2_Description/meshes/ur10e/collision/cable_channel.stl" scale="0.001 0.001 0.001"/>
+        </geometry>
+      </collision>
+    </link>
+
+    <joint name="${tf_prefix}cable_channel_flange-tool0" type="fixed">
+      <origin xyz="0.0 0.0599 -0.01" rpy="0 0 0"/>
+      <parent link="${tf_prefix}tool0"/>
+      <child link="${tf_prefix}cable_channel_flange"/>
+    </joint>
+
+    <joint name="${tf_prefix}cable_channel_flange-spiral" type="fixed">
+      <origin xyz="0.0 -0.051 -0.038" rpy="0 0 0"/>
+      <parent link="${tf_prefix}cable_channel_flange"/>
+      <child link="${tf_prefix}cable_channel"/>
+    </joint>
+
+    <joint name="${tf_prefix}flange-tool0" type="fixed">
+      <origin xyz="0.028 0.0249 0.01" rpy="0 0 0"/>
+      <parent link="${tf_prefix}tool0"/>
+      <child link="${tf_prefix}flange"/>
+    </joint>
+
+    <joint name="${tf_prefix}tool0-sickcamera" type="fixed">
+      <origin xyz="-0.081802 0.043811 0.003" rpy="0 0 0"/>
+      <parent link="${tf_prefix}flange"/>
+      <child link="${tf_prefix}sick_camera"/>
+    </joint>
+
+    <link name="${tf_prefix}depth_frame"/>
+    <link name="${tf_prefix}depth_optical_frame"/>
+    <link name="${tf_prefix}rgb_frame"/>
+    <link name="${tf_prefix}rgb_optical_frame"/>
+
+    <joint name="${tf_prefix}depth_joint" type="fixed">
+      <origin xyz="0.0 0.02 0.0" rpy="0 0 0" />
+      <parent link="${tf_prefix}sick_camera" />
+      <child link="${tf_prefix}depth_frame"/>
+    </joint>
+
+    <joint name="${tf_prefix}depth_optical_joint" type="fixed">
+      <origin xyz="0 0 0" rpy="0.0 0.0 0.0" />
+      <parent link="${tf_prefix}depth_frame" />
+      <child link="${tf_prefix}depth_optical_frame"/>
+    </joint>
+
+    <joint name="${tf_prefix}rgb_joint" type="fixed">
+      <origin xyz="0.0 0.0125 0.0" rpy="0 0 0" />
+      <parent link="${tf_prefix}sick_camera" />
+      <child link="${tf_prefix}rgb_frame"/>
+    </joint>
+
+    <joint name="${tf_prefix}rgb_optical_joint" type="fixed">
+      <origin xyz="0 0 0" rpy="0.0 0.0 0.0" />
+      <parent link="${tf_prefix}rgb_frame" />
+      <child link="${tf_prefix}rgb_optical_frame"/>
+    </joint>
+
+  </xacro:macro>
+</robot>

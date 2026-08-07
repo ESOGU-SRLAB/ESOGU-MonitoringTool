@@ -1,0 +1,15 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro">
+
+  <!--
+    ROS1: Bu dosya ros_control transmission'ları ve Gazebo Classic mimic plugin'i içeriyordu.
+
+    ROS2 Humble + Ignition:
+      - ros2_control konfigürasyonu <ros2_control> bloğu + YAML dosyasında yapılacak.
+      - Mimic joint davranışı, URDF'teki <joint mimic="..."> ile sağlanacak.
+      - Gazebo Classic plugin'i (libroboticsgroup_gazebo_mimic_joint_plugin.so) kullanılamaz.
+
+    Bu nedenle bu xacro, ROS2 versiyonunda intentionally no-op bırakıldı.
+  -->
+
+</robot>

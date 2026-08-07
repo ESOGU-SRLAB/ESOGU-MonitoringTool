@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(cd \"C:\\\\Users\\\\burak\\\\Downloads\\\\monitoring-tool\\\\client\" && \\\\ *)",
+      "Bash(chromium-cli --help)",
+      "Bash(find / -iname \"*chromium-cli*\" -not -path \"*/proc/*\" 2>/dev/null | head -20)",
+      "Read(//c//**)",
+      "Bash(npx react-scripts *)",
+      "Bash(PORT=3005 BROWSER=none nohup npm start)",
+      "Bash(disown)",
+      "Bash(timeout 60 bash -c 'until curl -sf http://localhost:3005 >/dev/null; do sleep 1; done')",
+      "WebSearch"
+    ]
+  }
+}

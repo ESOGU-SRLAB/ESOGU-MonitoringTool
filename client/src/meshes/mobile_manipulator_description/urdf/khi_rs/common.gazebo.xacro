@@ -1,0 +1,10 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro">
+
+  <!-- ROS2 Humble + Ignition:
+       Gazebo Classic pluginleri artık çalışmaz.
+       ros2_control, gz_ros2_control ve benzeri sistem pluginleri
+       world veya launch dosyasında tanımlanmalıdır.
+       Bu dosya artık intentionally no-op'tur. -->
+
+</robot>

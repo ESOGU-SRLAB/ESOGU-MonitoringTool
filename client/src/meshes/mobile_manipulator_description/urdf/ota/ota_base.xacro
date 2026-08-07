@@ -1,0 +1,88 @@
+<?xml version='1.0'?>
+
+<robot xmlns:xacro="http://ros.org/wiki/xacro">
+  <xacro:macro name="ota_base" params="link_name">
+
+    <link name='${link_name}'>
+      <origin xyz="0 0 0" rpy=" 0 0 0"/>
+      
+      <visual>
+        <origin xyz="-0.1 0 -0.1625" rpy=" 0 0 0"/>
+        <geometry>
+          <mesh filename="file:////home/cem/colcon_ws/src/mobile_manipulator_description/meshes/ota/OTA-v0.7.stl" scale="0.001 0.001 0.001"/>
+        </geometry>
+        <material name="DefaultWhite">
+          <color rgba="1 1 1 1"/>
+        </material>
+      </visual>    
+      
+      <collision>
+        <origin xyz="0 0 0.015" rpy=" 0 0 0"/>
+        <geometry>
+          <box size="1.02605 0.728 0.3"/>
+        </geometry>
+      </collision>
+
+
+      <!-- basit inertial (istersen box_inertial ile değiştirirsin) -->
+      <!-- <inertial>
+        <mass value="50.0"/>
+        <origin xyz="0 0 0"/>
+        <inertia ixx="5.0" iyy="5.0" izz="5.0" ixy="0" ixz="0" iyz="0"/>
+      </inertial> -->
+      <xacro:box_inertial x="1.02605" y="0.728"  z="0.3" mass="50.0" />
+
+    </link>
+
+    <gazebo reference="${link_name}">
+      <mu1>0.1</mu1>
+      <mu2>0.1</mu2>
+      <material>Gazebo/Orange</material>
+      <visual>
+        <material>
+          <ambient>0.85 0.35 0 1</ambient>
+          <diffuse>0.85 0.35 0 1</diffuse>
+          <specular>0.1 0.1 0.1 1</specular>
+        </material>
+      </visual>
+    </gazebo>
+
+    <link name='manipulator_base_link'>
+      <origin xyz="0 0 0" rpy=" 0 0 0"/>
+      
+      <visual>
+        <origin xyz="0 0 -0.0" rpy=" 0 0 0"/>
+        <geometry>
+          <box size="0.187945 0.190701 0.103"/>
+        </geometry>
+      </visual>    
+      
+      <collision>
+        <origin xyz="0 0 -0.0" rpy=" 0 0 0"/>
+        <geometry>
+          <box size="0.187945 0.190701 0.103"/>
+        </geometry>
+      </collision>    
+    
+      <xacro:box_inertial x="0.187945" y="0.190701"  z="0.103" mass="5.0" />
+    </link>
+
+    <!-- <gazebo reference="manipulator_base_link">
+      <material>Gazebo/Orange</material>
+      <visual>
+        <material>
+          <ambient>1 0.5 0 1</ambient>
+          <diffuse>1 0.5 0 1</diffuse>
+          <specular>0.1 0.1 0.1 1</specular>
+        </material>
+      </visual>
+    </gazebo> -->
+    
+    <joint name="base2manipulatorbase" type="fixed">
+      <parent link="${link_name}"/>
+      <child link="manipulator_base_link"/>
+      <origin rpy="0 0 0" xyz="0.001 -0.26 0.212"/>
+    </joint>
+
+  </xacro:macro>     
+</robot>

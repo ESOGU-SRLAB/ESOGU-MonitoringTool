@@ -1,0 +1,51 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://ros.org/wiki/xacro">
+
+  <!-- ✅ Joint State Publisher (Ignition: gz-sim-joint-state-publisher-system) -->
+  <xacro:macro name="ota_joints_state_publisher">
+    <gazebo>
+      <plugin filename="libignition-gazebo6-joint-state-publisher-system.so" 
+              name="ignition::gazebo::systems::JointStatePublisher">
+        <update_rate>50</update_rate>
+      </plugin>
+    </gazebo>
+  </xacro:macro>  
+
+
+  <!-- ✅ Differential Drive Plugin (Ignition: gz-sim-diff-drive-system) -->
+  <xacro:macro name="ota_diff_drive" params="base_link">
+    <gazebo>
+      <plugin name="ignition::gazebo::systems::DiffDrive"
+              filename="libignition-gazebo6-diff-drive-system.so">
+
+        <!-- Tekerlek eklemleri (ota_wheel.xacro'daki joint isimleri) -->
+        <left_joint>wheel_left_base</left_joint>
+        <right_joint>wheel_right_base</right_joint>
+
+        <!-- Geometri -->
+        <wheel_separation>0.60</wheel_separation>
+        <wheel_radius>0.102</wheel_radius>
+
+        <!-- Hız limitleri -->
+        <max_linear_acceleration>1.0</max_linear_acceleration>
+        <min_linear_acceleration>-1.0</min_linear_acceleration>
+        <max_angular_acceleration>2.0</max_angular_acceleration>
+        <min_angular_acceleration>-2.0</min_angular_acceleration>
+
+        <!-- Komut ve odom topic'leri - basit isimler (bridge ile ROS'a bağlanacak) -->
+        <topic>cmd_vel</topic>
+        <odom_topic>odom</odom_topic>
+
+        <!-- TF yayınla -->
+        <odom_publish_frequency>50</odom_publish_frequency>
+        <tf_topic>/tf</tf_topic>
+        
+        <!-- Frame isimleri: odom -> ota_base_link (world->odom static TF ile ayarlanacak) -->
+        <frame_id>odom</frame_id>
+        <child_frame_id>${base_link}</child_frame_id>
+
+      </plugin>
+    </gazebo>
+  </xacro:macro>
+
+</robot>

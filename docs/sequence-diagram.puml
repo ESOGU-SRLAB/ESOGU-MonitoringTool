@@ -1,0 +1,45 @@
+@startuml MonitoringTool-DataFlow
+title MATISSE IFARLAB-EDIH Monitoring Tool -- Live Telemetry & Manual Control Flow
+
+actor User
+participant "Browser\n(client, React + Three.js)" as Browser
+participant "api/server.js\n(Express + SSE)" as API
+database "MongoDB Atlas\n(joint_states collection)" as Mongo
+
+== Startup ==
+User -> Browser : open app
+Browser -> API : GET /api/telemetry/joint-states/stream\n(new EventSource)
+activate API
+API --> Browser : event: hello
+API -> Mongo : ensureConnected()
+activate Mongo
+Mongo --> API : connection OK
+deactivate Mongo
+
+== Live telemetry (every request-interval, min 250ms) ==
+loop until the browser tab closes the connection
+  API -> Mongo : findOne({_id: "latest"})\n(fallback: sort by ts desc)
+  activate Mongo
+  Mongo --> API : { ts, ur10e[7 rad], kawasaki[7 rad] }
+  deactivate Mongo
+  API -> API : toArmDegrees() -- indices 1-6, rad -> deg\ntoRailPosition() -- index 0, metres passthrough
+  API --> Browser : event: joint_states\n{ ur10e[6], ur10eRail, kawasaki[6], agvRail, timestamp }
+  Browser -> Browser : setJointAngles / setKawasakiAngles\nsetRailPosition / setAgvRailPosition
+  Browser -> Browser : Three.js re-renders both robots\nat the new joint pose
+end
+
+== Manual control (any time) ==
+User -> Browser : drag a joint / rail / gripper slider
+Browser -> Browser : setState directly (no network call)
+Browser -> Browser : Three.js re-renders immediately
+note right of Browser
+  Incoming live "joint_states" events are ignored
+  while "Play demo animation" is on, so live and
+  manual control never fight outside of that case.
+end note
+
+== Demo animation (optional) ==
+Browser -> Browser : RailAnimator + per-robot useFrame hooks\nmutate Three.js refs directly every frame\n(bypasses React state for smooth 60fps motion)
+
+deactivate API
+@enduml

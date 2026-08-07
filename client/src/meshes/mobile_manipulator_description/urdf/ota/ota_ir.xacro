@@ -1,0 +1,52 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro">
+
+  <xacro:macro name="ota_ir" params="base_link link_name xyz_ir rpy_ir">
+
+    <link name="${link_name}_link">
+
+      <!-- Inertial -->
+      <inertial>
+        <mass value="0.001"/>
+        <origin xyz="0 0 0"/>
+        <inertia ixx="0.001666" iyy="0.001666" izz="0.001666"
+                 ixy="0" ixz="0" iyz="0"/>
+      </inertial>
+
+      <!-- Visual -->
+      <visual>
+        <origin xyz="0 0 0"/>
+        <geometry>
+          <box size="0.02 0.02 0.02"/>
+        </geometry>
+      </visual>
+
+      <!-- Collision -->
+      <collision>
+        <origin xyz="0 0 0"/>
+        <geometry>
+          <box size="0.02 0.02 0.02"/>
+        </geometry>
+      </collision>
+
+      <!-- Gazebo sensor plugin (IR/Range) -->
+      <gazebo reference="${link_name}_link">
+        <sensor name="${link_name}_sensor" type="ray">
+          <always_on>true</always_on>
+          <update_rate>20</update_rate>
+          <pose>-0.1 0 0 0 0 0</pose>
+          <visualize>true</visualize>
+        </sensor>
+      </gazebo>
+
+    </link>
+
+    <joint name="${link_name}_joint" type="fixed">
+      <origin xyz="${xyz_ir}" rpy="${rpy_ir}"/>
+      <parent link="${base_link}"/>
+      <child link="${link_name}_link"/>
+    </joint>
+
+  </xacro:macro>
+
+</robot>

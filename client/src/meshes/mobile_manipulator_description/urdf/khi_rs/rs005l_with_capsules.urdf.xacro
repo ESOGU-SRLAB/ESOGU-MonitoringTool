@@ -1,0 +1,27 @@
+<?xml version="1.0" ?>
+<robot name="khi_rs005l" xmlns:xacro="http://www.ros.org/wiki/xacro">
+
+  <!-- ROS2: find → find-pkg-share -->
+  <xacro:include filename="$(find-pkg-share khi_rs_description)/urdf/rs005l_with_capsules_macro.xacro"/>
+
+  <!-- Realsense örneği (ROS2 paketin varsa find-pkg-share'e çevirebilirsin)
+  <xacro:include filename="$(find-pkg-share realsense_gazebo_plugin)/urdf/d435_simulation.xacro"/>
+  -->
+
+  <!-- Kinect sensör (ROS2'de kinect_v2 paketin varsa bu satır çalışır) -->
+  <!-- <xacro:include filename="$(find-pkg-share kinect_v2)/urdf/kinect_v2_standalong.urdf.xacro"/> -->
+
+  <!-- RS005L + kapsül collision'lı versiyonu instantiate -->
+  <xacro:khi_rs005l prefix=""/>
+
+  <!-- World link -->
+  <link name="world"/>
+
+  <!-- Robotu world'e sabitle -->
+  <joint name="world2base" type="fixed">
+    <parent link="world"/>
+    <child link="base_link"/>  <!-- prefix="" olduğu için doğru -->
+    <origin xyz="0 0 0" rpy="0 0 0"/>
+  </joint>
+
+</robot>

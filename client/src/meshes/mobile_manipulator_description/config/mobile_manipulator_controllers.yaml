@@ -1,0 +1,68 @@
+controller_manager:
+  ros__parameters:
+    update_rate: 500
+    
+    joint_state_broadcaster:
+      type: joint_state_broadcaster/JointStateBroadcaster
+
+    kawasaki_controller:
+      type: joint_trajectory_controller/JointTrajectoryController
+      # type: effort_controllers/JointGroupEffortController # orjinali
+    ota_base_controller:
+      type: diff_drive_controller/DiffDriveController
+
+kawasaki_controller:
+  ros__parameters:
+    joints:
+      - joint1
+      - joint2
+      - joint3
+      - joint4
+      - joint5
+      - joint6
+    command_interfaces:
+      - position
+    state_interfaces:
+      - position
+      - velocity
+ota_base_controller:
+  ros__parameters:
+    # Teker joint isimleri (URDF / xacro ile birebir aynı olmalı)
+    left_wheel_names:
+      - wheel_left_base
+    right_wheel_names:
+      - wheel_right_base
+
+    # Geometri (xacro’da kullandıklarınla tutarlı)
+    wheel_separation: 0.60    # tekerlekler arası mesafe [m]
+    wheel_radius: 0.102       # teker yarıçapı [m]
+
+    # Frame isimleri
+    base_frame_id: ota_base_link
+    odom_frame_id: odom
+
+    # cmd_vel davranışı
+    cmd_vel_timeout: 0.25      # [s]
+    use_stamped_vel: false
+
+    # Yayın / filtre ayarları
+    publish_rate: 50.0         # odom + joint state publish hızı
+    velocity_rolling_window_size: 10
+
+    # Odom TF yayını (Ignition DiffDrive ile birlikte kullanırsan bunu false yap)
+    enable_odom_tf: true
+
+    # Limitler (istersen doldurabilirsin)
+    linear:
+      x:
+        has_velocity_limits: true
+        max_velocity: 1.0
+        has_acceleration_limits: true
+        max_acceleration: 1.5
+
+    angular:
+      z:
+        has_velocity_limits: true
+        max_velocity: 2.0
+        has_acceleration_limits: true
+        max_acceleration: 3.0

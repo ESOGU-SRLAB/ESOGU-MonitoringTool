@@ -1,0 +1,22 @@
+{
+  "name": "ifarlab-mongo-joint-monitor",
+  "version": "1.0.0",
+  "private": true,
+  "description": "HTTP/SSE backend streaming the latest UR10e and Kawasaki joint state from MongoDB Atlas to the client. debug.js is a standalone CLI dump of the same data.",
+  "main": "server.js",
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "start": "node server.js",
+    "debug": "node debug.js",
+    "debug:once": "node debug.js --once"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^17.2.1",
+    "express": "^4.21.2",
+    "mongodb": "^7.0.0"
+  }
+}
+
